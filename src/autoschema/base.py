@@ -1,0 +1,1 @@
+"""Base classes for AutoSchema models."""
