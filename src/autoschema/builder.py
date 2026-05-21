@@ -41,4 +41,4 @@ def build_schema(
 
     schema_name = f"{model.__name__}{schema_type.capitalize()}Schema"
 
-    return create_model(schema_name, __config__=ConfigDict(from_attributes=True, **fields))
+    return create_model(schema_name, __config__=ConfigDict(from_attributes=True), **fields)
