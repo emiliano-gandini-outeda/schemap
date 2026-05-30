@@ -1,7 +1,7 @@
 [project]
-name = "sqlalchtopydant"
+name = "schemap"
 version = "0.1.0"
-description = "Add your description here"
+description = "Automatic Pydantic Schemas for SQLAlchemy models"
 readme = "README.md"
 requires-python = ">=3.12.7"
 authors = [
@@ -35,6 +35,10 @@ example = [
     "uvicorn>=0.23.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/emiliano-gandini-outeda/schemap"
+Repository = "https://github.com/emiliano-gandini-outeda/schemap"
+Issues = "https://github.com/emiliano-gandini-outeda/schemap/issues"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
