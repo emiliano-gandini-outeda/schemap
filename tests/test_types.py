@@ -6,7 +6,7 @@ from sqlalchemy import Integer, String, Boolean, DateTime, Date, Float, Text, JS
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Column
 
-from autoschema.types import extract_python_type, extract_column_metadata
+from schemap.types import extract_python_type, extract_column_metadata
 
 
 def test_simple_type_mapping():

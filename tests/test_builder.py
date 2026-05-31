@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from typing import Optional, Union
-from autoschema.builder import build_schema
+from schemap.builder import build_schema
 
 
 class Base(DeclarativeBase):
