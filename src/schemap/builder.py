@@ -30,13 +30,13 @@ def build_schema(
 
     for col in inspector.columns:
         meta = extract_column_metadata(col)
-        if should_include(schema_type, meta):
+        if should_include(schema_type, meta, config):
             columns_meta.append(meta)
 
     fields = {}
     
     for col_meta in columns_meta:
-        field_type, field_kwargs = transform_for_schema(col_meta, schema_type)
+        field_type, field_kwargs = transform_for_schema(col_meta, schema_type, config)
         fields[col_meta["name"]] = (field_type, field_kwargs)
 
     schema_name = f"{model.__name__}{schema_type.capitalize()}Schema"
