@@ -1,16 +1,12 @@
 # Schemap
 
-Automatic Pydantic v2 schemas from SQLAlchemy 2.0 ORM models: no more manually mirroring your database columns in Pydantic.
-
-> **Note:** This 0.2.0 release provides the core schema generation functionality. Schema configuration and customization are actively being worked on.
+Automatic Pydantic v2 schemas from SQLAlchemy 2.0 ORM models.
 
 ```bash
 pip install schemap
 ```
 
 ## Quick Start
-
-Define your models with `AutoBase`. Schemas are generated automatically:
 
 ```python
 from schemap import AutoBase
@@ -23,45 +19,57 @@ class User(AutoBase):
     name: Mapped[str]
     email: Mapped[str]
 
-# Four schemas are available as class attributes:
-User.Schema           # all columns
-User.CreateSchema     # excludes id, defaults (for inserts)
-User.UpdateSchema     # all fields optional (for partial updates)
-User.PublicSchema     # excludes fields starting with "__"
+User.Schema         # all columns
+User.CreateSchema   # excludes PKs, server_defaults, defaults
+User.UpdateSchema   # all fields Optional (partial updates)
+User.PublicSchema   # excludes __-prefixed fields
 
-# Round-trip between ORM and Pydantic:
+# Round-trip ORM <-> Pydantic
 data = User.CreateSchema(name="Alice", email="alice@example.com")
 user = User.from_schema(data)
 schema = user.to_schema()
 ```
 
-## Standalone Usage
+## SchemaConfig
 
-Use `build_schema` without `AutoBase`:
+Customize generated schemas per model using `__schema_config__`:
+
+```python
+from schemap import AutoBase
+from schemap.config import SchemaConfig
+from sqlalchemy.orm import Mapped, mapped_column
+
+class User(AutoBase):
+    __tablename__ = "users"
+    __schema_config__ = SchemaConfig(
+        exclude_public=["email"],
+        exclude_create=["internal_id"],
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+    internal_id: Mapped[int]
+```
+
+| Option | Type | Description |
+|---|---|---|
+| `exclude_always` | `list[str]` | Exclude from all schema variants |
+| `exclude_create` | `list[str]` | Exclude from CreateSchema only |
+| `exclude_update` | `list[str]` | Exclude from UpdateSchema only |
+| `exclude_public` | `list[str]` | Exclude from PublicSchema only |
+| `field_overrides` | `dict[str, Any]` | Override a field's Python type |
+| `required_always` | `list[str]` | Force fields to be required |
+| `optional_always` | `list[str]` | Force fields to be optional |
+
+## Standalone
 
 ```python
 from schemap import build_schema
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from schemap.config import SchemaConfig
 
-class Base(DeclarativeBase):
-    pass
-
-class User(Base):
-    __tablename__ = "users"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
-
-UserSchema = build_schema(User, "default")
+UserSchema = build_schema(User, "create", config=SchemaConfig(exclude_create=["internal_id"]))
 ```
-
-## Schema Variants
-
-| Variant | Filtering | Nullability |
-|---|---|---|
-| `"default"` (`.Schema`) | all columns | matches model |
-| `"create"` (`.CreateSchema`) | excludes PKs, server_defaults, defaults | matches model |
-| `"update"` (`.UpdateSchema`) | excludes PKs | all fields `Optional[type] = None` |
-| `"public"` (`.PublicSchema`) | excludes `__`-prefixed columns | matches model |
 
 ## Requirements
 
