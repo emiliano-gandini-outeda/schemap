@@ -12,22 +12,26 @@ class SchemaMixin:
     @cached_classproperty
     def Schema(cls) -> Any:
         """ Full schema with all columns """
-        return build_schema(cls, schema_type="default")
+        config = getattr(cls, "__schema_config__", None)
+        return build_schema(cls, schema_type="default", config=config)
     
     @cached_classproperty
     def CreateSchema(cls) -> Any:
         """ Schema for creating new instances (excludes primary keys, server defaults) """
-        return build_schema(cls, schema_type="create")
+        config = getattr(cls, "__schema_config__", None)
+        return build_schema(cls, schema_type="create", config=config)
 
     @cached_classproperty
     def UpdateSchema(cls) -> Any:
         """ Schema for partial updates (all fields optional) """
-        return build_schema(cls, schema_type="update")
+        config = getattr(cls, "__schema_config__", None)
+        return build_schema(cls, schema_type="update", config=config)
     
     @cached_classproperty
     def PublicSchema(cls) -> Any:
         """ Public-facing schema (excludes sensitive fields) """
-        return build_schema(cls, schema_type="public")
+        config = getattr(cls, "__schema_config__", None)
+        return build_schema(cls, schema_type="public", config=config)
     
     @classmethod
     def from_schema(cls, schema_obj : Any) -> Any:
