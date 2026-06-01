@@ -11,7 +11,7 @@ from schemap.mixins import TimestampMixin, SoftDeleteMixin
 
 # --- Test models ---
 class User(AutoBase, TimestampMixin):
-    __tablename__ = "users"
+    __tablename__ = "mixin_users"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column()
 
