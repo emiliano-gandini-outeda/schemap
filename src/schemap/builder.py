@@ -1,7 +1,7 @@
 from typing import Type, Any, Optional
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import inspect
-from pydantic import create_model, ConfigDict, Field
+from pydantic import create_model, ConfigDict, field_validator
 
 from .types import extract_column_metadata
 from .utils.schema import should_include, transform_for_schema
@@ -41,4 +41,17 @@ def build_schema(
 
     schema_name = f"{model.__name__}{schema_type.capitalize()}Schema"
 
-    return create_model(schema_name, __config__=ConfigDict(from_attributes=True), **fields)
+    validators = {}
+    if config and config.extra_validators:
+        for field_name, validator_func in config.extra_validators.items():
+            # Wrap the validator with field_validator BEFORE passing to create_model
+            validators[f"validate_{field_name}"] = field_validator(field_name)(validator_func)
+
+    # Create model with validators built-in
+    schema_class = create_model(
+        schema_name,
+        __config__=ConfigDict(from_attributes=True),
+        __validators__=validators or None,
+        **fields,
+    )
+    return schema_class
