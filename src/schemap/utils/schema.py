@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Annotated
 from pydantic import Field
 
 def should_include(schema_type: str, metadata: dict[str, Any], config: Optional[Any] = None):
@@ -53,26 +53,48 @@ def should_include(schema_type: str, metadata: dict[str, Any], config: Optional[
 def transform_for_schema(metadata: dict, schema_type: str, config: Optional[Any]) -> tuple[type, Any]:
     """Transform column metadata into (field_type, Field(...)) for create_model."""
     
-    # Handle config being None
-    if config is None:
-        field_overrides = {}
-        required_always = set()
-        optional_always = set()
-    else:
-        field_overrides = config.field_overrides
-        required_always = set(config.required_always)
-        optional_always = set(config.optional_always)
-    
-    # Apply type override
     field_name = metadata["name"]
-    python_type = field_overrides.get(field_name, metadata["python_type"])
     
-    # Determine optional/required with forced overrides
-    if field_name in required_always:
+    config_defaults = _get_config_defaults(config, field_name)
+    
+    type_info = _resolve_type_and_nullability(metadata, config_defaults)
+    
+    field_def = _apply_schema_rules(type_info, schema_type)
+    
+    field_def = _apply_validators(field_def, config, field_name)
+    
+    return field_def
+
+
+def _get_config_defaults(config: Optional[Any], field_name: str) -> dict:
+    """Extract config defaults or provide empty fallbacks."""
+    if config is None:
+        return {
+            "override_type": None,
+            "is_required_forced": False,
+            "is_optional_forced": False,
+            "has_validator": False
+        }
+    
+    return {
+        "override_type": config.field_overrides.get(field_name),
+        "is_required_forced": field_name in config.required_always,
+        "is_optional_forced": field_name in config.optional_always,
+        "has_validator": field_name in config.extra_validators
+    }
+
+
+def _resolve_type_and_nullability(metadata: dict, config_defaults: dict) -> dict:
+    """Determine final Python type and whether field is optional."""
+    field_name = metadata["name"]
+    base_type = config_defaults["override_type"] or metadata["python_type"]
+    
+    # Forced overrides take precedence
+    if config_defaults["is_required_forced"]:
         is_optional = False
         has_default = False
         default_value = None
-    elif field_name in optional_always:
+    elif config_defaults["is_optional_forced"]:
         is_optional = True
         has_default = True
         default_value = None
@@ -81,38 +103,65 @@ def transform_for_schema(metadata: dict, schema_type: str, config: Optional[Any]
         has_default = metadata.get("default") is not None
         default_value = metadata.get("default")
     
+    return {
+        "name": field_name,
+        "base_type": base_type,
+        "is_optional": is_optional,
+        "has_default": has_default,
+        "default_value": default_value,
+        "max_length": metadata.get("max_length")
+    }
+
+
+def _apply_schema_rules(type_info: dict, schema_type: str) -> tuple[type, Any]:
+    """Apply schema-specific rules (update/create/default)."""
+    base_type = type_info["base_type"]
+    is_optional = type_info["is_optional"]
+    has_default = type_info["has_default"]
+    default_value = type_info["default_value"]
+    
     # Build Field kwargs from constraints
     field_kwargs = {}
+    if type_info["max_length"] is not None:
+        field_kwargs["max_length"] = type_info["max_length"]
     
-    # String length constraint
-    if metadata.get("max_length") is not None:
-        field_kwargs["max_length"] = metadata["max_length"]
-    
-    # Update schema - all fields become Optional with None default
+    # Update schema: all fields Optional with None default
     if schema_type == "update":
         field_kwargs["default"] = None
-        return (Optional[python_type], Field(**field_kwargs))
+        return (Optional[base_type], Field(**field_kwargs) if field_kwargs else ...)
     
-    # Create schema - exclude server_default fields already filtered
+    # Create schema: respect metadata, exclude server_default fields already filtered
     elif schema_type == "create":
         if has_default:
             field_kwargs["default"] = default_value
-            return (python_type, Field(**field_kwargs))
+            return (base_type, Field(**field_kwargs) if field_kwargs else ...)
         elif is_optional:
             field_kwargs["default"] = None
-            return (Optional[python_type], Field(**field_kwargs))
+            return (Optional[base_type], Field(**field_kwargs) if field_kwargs else ...)
         else:
-            # Required field with no default
-            return (python_type, Field(**field_kwargs) if field_kwargs else ...)
+            return (base_type, Field(**field_kwargs) if field_kwargs else ...)
     
     # Default or Public schema
     else:
         if has_default:
             field_kwargs["default"] = default_value
-            return (python_type, Field(**field_kwargs))
+            return (base_type, Field(**field_kwargs) if field_kwargs else ...)
         elif is_optional:
             field_kwargs["default"] = None
-            return (Optional[python_type], Field(**field_kwargs))
+            return (Optional[base_type], Field(**field_kwargs) if field_kwargs else ...)
         else:
-            # Required field with no default
-            return (python_type, Field(**field_kwargs) if field_kwargs else ...)
+            return (base_type, Field(**field_kwargs) if field_kwargs else ...)
+
+
+def _apply_validators(field_def: tuple[type, Any], config: Optional[Any], field_name: str) -> tuple[type, Any]:
+    """Wrap field type with Annotated if custom validator exists."""
+    if not config or field_name not in config.extra_validators:
+        return field_def
+    
+    field_type, field_args = field_def
+    validator = config.extra_validators[field_name]
+    
+    # Wrap the type with Annotated[original_type, validator]
+    annotated_type = Annotated[field_type, validator]
+    
+    return (annotated_type, field_args)
