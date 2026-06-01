@@ -7,16 +7,29 @@ from schemap.builder import build_schema
 from schemap.types import extract_python_type, extract_column_metadata
 from schemap.utils.likeness import ColumnLike
 from schemap.config import SchemaConfig
-from schemap.mixins import TimestampMixin, SoftDeleteMixin
+from schemap.mixins import (
+    ArchivableMixin,
+    CreatedByMixin,
+    IntPrimaryKeyMixin,
+    SoftDeleteMixin,
+    StatusMixin,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+    UpdatedByMixin,
+    VersionMixin,
+)
 
 __all__ = [
+    "ArchivableMixin",
     "AutoBase",
-    "SchemaMixin",
-    "build_schema",
-    "extract_python_type",
-    "extract_column_metadata",
-    "ColumnLike",
+    "CreatedByMixin",
+    "IntPrimaryKeyMixin",
     "SchemaConfig",
-    "TimestampMixin",
+    "SchemaMixin",
     "SoftDeleteMixin",
+    "StatusMixin",
+    "TimestampMixin",
+    "UUIDPrimaryKeyMixin",
+    "UpdatedByMixin",
+    "VersionMixin",
 ]
