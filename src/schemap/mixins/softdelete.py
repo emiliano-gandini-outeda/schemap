@@ -16,5 +16,4 @@ class SoftDeleteMixin:
     @classmethod
     def active(cls):
         """Return query filter for undeleted records."""
-        from sqlalchemy import or_
-        return or_(cls.deleted_at.is_(None))
+        return cls.deleted_at.is_(None)
