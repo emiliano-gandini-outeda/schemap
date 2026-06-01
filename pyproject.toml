@@ -32,7 +32,7 @@ dev = [
     "pytest-cov>=4.0.0",
 ]
 example = [
-    "fastapi>=0.100.0",
+    "fastapi>=0.136.3",
     "uvicorn>=0.23.0",
 ]
 
