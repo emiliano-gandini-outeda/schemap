@@ -1,6 +1,6 @@
 """ Automatic Pydantic schemas for SQLAlchemy models """
 
-__version__ = "0.3.0"
+__version__ = "0.5.0"
 
 from schemap.base import AutoBase, SchemaMixin
 from schemap.builder import build_schema
