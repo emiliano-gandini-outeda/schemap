@@ -34,6 +34,8 @@ src/schemap/
 ├── base.py        # AutoBase, SchemaMixin
 ├── builder.py     # build_schema()
 ├── config.py      # SchemaConfig dataclass
+├── decorator.py   # @auto_schema decorator
+├── methods.py     # from_schema / to_schema helpers
 ├── types.py       # Type extraction utilities
 ├── mixins/        # Built-in reusable mixins
 └── utils/         # Internal utilities

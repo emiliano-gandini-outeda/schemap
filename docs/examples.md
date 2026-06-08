@@ -50,6 +50,27 @@ def update_user(user_id: int, data: User.UpdateSchema, session: Session = Depend
     return user.to_schema()
 ```
 
+The decorator approach works the same way in FastAPI. Just swap `AutoBase` for `@auto_schema`:
+
+```python
+from schemap import auto_schema
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class Base(DeclarativeBase):
+    pass
+
+@auto_schema
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+
+Base.metadata.create_all(engine)
+
+# Same CRUD code — User.Schema, User.CreateSchema etc. all exist
+```
+
 Hide sensitive fields from API responses with `exclude_public`:
 
 ```python

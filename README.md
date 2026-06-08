@@ -30,6 +30,9 @@ The library reads your SQLAlchemy columns and translates them into Pydantic fiel
 
 ## Quick Start
 
+Schemap gives you three ways to attach schemas to your models. All three produce identical schemas.
+
+**AutoBase** — inherit from the ready-made declarative base:
 ```python
 from schemap import AutoBase
 from sqlalchemy.orm import Mapped, mapped_column
@@ -40,8 +43,28 @@ class User(AutoBase):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     email: Mapped[str]
+```
 
-# Four schemas generated automatically
+**@auto_schema** — decorate any existing model without changing its base class:
+```python
+from schemap import auto_schema
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class Base(DeclarativeBase):
+    pass
+
+@auto_schema
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+```
+
+Both approaches give you the same four schemas and conversion methods:
+
+```python
 User.Schema         # all columns
 User.CreateSchema   # excludes primary keys and server defaults
 User.UpdateSchema   # all fields optional for partial updates
@@ -51,6 +74,14 @@ User.PublicSchema   # excludes fields starting with __
 data = User.CreateSchema(name="Alice", email="alice@example.com")
 user = User.from_schema(data)
 schema = user.to_schema()
+```
+
+The decorator also accepts a config argument:
+
+```python
+@auto_schema(config=SchemaConfig(exclude_public=["email"]))
+class User(Base):
+    ...
 ```
 
 ## SchemaConfig
@@ -117,7 +148,7 @@ class Product(AutoBase):
 
 ## Standalone Usage
 
-Use `build_schema` directly if you prefer not to use AutoBase.
+Use `build_schema` directly when you need a schema without modifying the model class.
 
 ```python
 from schemap import build_schema
@@ -125,6 +156,27 @@ from schemap.config import SchemaConfig
 
 UserSchema = build_schema(User, schema_type="create", config=SchemaConfig(exclude_create=["internal_id"]))
 ```
+
+## Decorator API
+
+Use `@auto_schema` to attach schemas to any SQLAlchemy model without inheritance.
+
+```python
+from schemap import auto_schema, SchemaConfig
+
+# Bare decorator — all defaults
+@auto_schema
+class User(Base):
+    __tablename__ = "users"
+    ...
+
+# With config
+@auto_schema(config=SchemaConfig(exclude_public=["email"]))
+class User(Base):
+    ...
+```
+
+The decorator runs after the class body and attaches `.Schema`, `.CreateSchema`, `.UpdateSchema`, `.PublicSchema`, `.from_schema()`, and `.to_schema()` directly to your class. Your model's inheritance chain stays unchanged.
 
 ## Requirements
 

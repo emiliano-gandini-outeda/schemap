@@ -2,7 +2,9 @@
 
 ## Defining a model
 
-Extend `AutoBase` to get schemas automatically on every model:
+Schemap supports three approaches. All three produce identical schemas. Pick the one that fits your project.
+
+**AutoBase** — inherit from the ready-made declarative base:
 
 ```python
 from schemap import AutoBase
@@ -16,7 +18,7 @@ class Product(AutoBase):
     price: Mapped[float] = mapped_column(nullable=True)
 ```
 
-Use `SchemaMixin` if you already have a custom declarative base:
+**SchemaMixin** — use with an existing custom declarative base:
 
 ```python
 from schemap import SchemaMixin
@@ -29,6 +31,27 @@ class Product(Base):
     __tablename__ = "products"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
+```
+
+**@auto_schema** — decorate any model without changing its base class:
+
+```python
+from schemap import auto_schema
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class Base(DeclarativeBase):
+    pass
+
+@auto_schema
+class Product(Base):
+    __tablename__ = "products"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str]
+
+# With configuration
+@auto_schema(config=SchemaConfig(exclude_public=["price"]))
+class Product(Base):
+    ...
 ```
 
 ## State of .gitignore

@@ -4,6 +4,7 @@
 
 ```python
 from schemap import (
+    auto_schema,
     AutoBase,
     SchemaMixin,
     SchemaConfig,
@@ -50,6 +51,39 @@ Schemas are cached per class via `cached_classproperty`.
 
 Set `__schema_config__ = SchemaConfig(...)` on any model class to customize its schemas.
 
+## auto_schema
+
+Decorator that attaches generated schemas to any SQLAlchemy model without changing its base class.
+
+```python
+def auto_schema(
+    cls: type[T] | None = None,
+    *,
+    config: SchemaConfig | None = None,
+) -> type[T]
+```
+
+**Usage:**
+
+```python
+from schemap import auto_schema, SchemaConfig
+
+# Bare decorator — all defaults
+@auto_schema
+class User(Base):
+    __tablename__ = "users"
+    ...
+
+# With config
+@auto_schema(config=SchemaConfig(exclude_public=["email"]))
+class User(Base):
+    ...
+```
+
+Attaches `.Schema`, `.CreateSchema`, `.UpdateSchema`, `.PublicSchema`, `.from_schema()`, and `.to_schema()` to the decorated class. Works with any `DeclarativeBase` subclass. All three approaches (`AutoBase`, `SchemaMixin`, `@auto_schema`) produce identical schemas.
+
+**Schema types:** `"full"` (all columns), `"create"` (excludes PKs and defaults), `"update"` (all optional), `"public"` (excludes `__`-prefixed columns).
+
 ## SchemaConfig
 
 Dataclass for per-model schema customization. All fields are optional.
@@ -75,7 +109,7 @@ def build_schema(
 
 Build a Pydantic schema class for any SQLAlchemy model without using `AutoBase`.
 
-**schema_type values:** `"default"`, `"create"`, `"update"`, `"public"`.
+**schema_type values:** `"default"`, `"full"`, `"create"`, `"update"`, `"public"`.
 
 ```python
 from schemap import build_schema, SchemaConfig

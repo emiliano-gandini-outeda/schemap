@@ -1,5 +1,6 @@
 from typing import Type, Any, Optional
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.exc import NoInspectionAvailable
+from sqlalchemy.orm import DeclarativeBase, configure_mappers
 from sqlalchemy import inspect
 from pydantic import create_model, ConfigDict, field_validator
 
@@ -9,7 +10,7 @@ from .utils.schema import should_include, transform_for_schema
 
 def build_schema(
     model: Type[DeclarativeBase],
-    schema_type: str = "default",  # "default", "create", "update", "public"
+    schema_type: str = "default",  # "default", "full", "create", "update", "public"
     config: Optional[Any] = None,  # SchemaConfig
 ) -> Any:
     """
@@ -24,7 +25,11 @@ def build_schema(
         A Pydantic model class
     """
     
-    inspector = inspect(model)
+    try:
+        inspector = inspect(model)
+    except NoInspectionAvailable:
+        configure_mappers()
+        inspector = inspect(model)
 
     columns_meta = []
 

@@ -14,7 +14,7 @@ def should_include(schema_type: str, metadata: dict[str, Any], config: Optional[
         if schema_type == "update" and metadata["name"] in config.exclude_update:
             return False
 
-    if schema_type == "default":
+    if schema_type in ("default", "full"):
         return True
     
     elif schema_type == "create":
