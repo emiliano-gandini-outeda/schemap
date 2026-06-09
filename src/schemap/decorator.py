@@ -34,7 +34,7 @@ def auto_schema(
 
 def auto_schema(cls=None, *, config: SchemaConfig | None = None):
     if cls is not None:
-        return _apply_auto_schema(cls, config=None)
+        return _apply_auto_schema(cls, config=config)
     def decorator(klass: type[T]) -> type[T]:
         return _apply_auto_schema(klass, config=config)
     return decorator
